@@ -27,7 +27,7 @@ Clone the repository:
 Install the dependencies:
 
 ```bash
-  cd voice-bot
+  cd ChatBot
   npm install
 ```
 Set up the environment variables:
