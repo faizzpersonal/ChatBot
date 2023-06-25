@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Voice Bot</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .chat-container {
+        width: 400px;
+        margin: 0 auto;
+        background-color: #f1f1f1;
+        border-radius: 6px;
+        padding: 20px;
+        box-sizing: border-box;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .user-bubble,
+      .bot-bubble {
+        display: inline-block;
+        max-width: 80%;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+      }
+
+      .user-bubble {
+        background-color: #4caf50;
+        color: white;
+        text-align: left;
+      }
+
+      .bot-bubble {
+        background-color: #f9f9f9;
+        color: #333;
+        text-align: left;
+      }
+
+      .input-container {
+        margin-top: 20px;
+      }
+
+      .input-container button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+
+      .input-container button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Voice Bot</h1>
+    <div class="chat-container">
+      <div class="bot-bubble">Welcome! How can I assist you today?</div>
+    </div>
+    <div class="input-container">
+      <button onclick="startRecording()">Start Recording</button>
+      <button onclick="stopRecording()">Stop Recording</button>
+    </div>
+
+    <script>
+      let recognition;
+
+      // Function to start recording user's voice input
+      function startRecording() {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+
+        recognition.onresult = function (event) {
+          const result = event.results[event.results.length - 1][0].transcript;
+          console.log("User input:", result);
+
+          // Add user's message to the chat
+          addBubble(result, "user");
+
+          // Pass the result to the server for processing
+          fetch("/process", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query: result }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Bot response:", data.response);
+
+              // Add bot's response to the chat
+              addBubble(data.response, "bot");
+
+              // Play the bot's response
+              playResponse(data.response);
+            })
+            .catch((error) => console.error("Error:", error));
+        };
+
+        recognition.start();
+      }
+
+      // Function to stop recording user's voice input
+      function stopRecording() {
+        recognition.stop();
+      }
+
+      // Function to play the bot's response using text-to-speech
+      function playResponse(responseText) {
+        const utterance = new SpeechSynthesisUtterance(responseText);
+        speechSynthesis.speak(utterance);
+      }
+
+      // Function to add a chat bubble to the chat container
+      function addBubble(message, sender) {
+        const bubbleContainer = document.createElement("div");
+        const bubble = document.createElement("div");
+        bubble.classList.add(sender === "user" ? "user-bubble" : "bot-bubble");
+        bubble.innerText = message;
+        bubbleContainer.appendChild(bubble);
+
+        const chatContainer = document.querySelector(".chat-container");
+        chatContainer.appendChild(bubbleContainer);
+      }
+    </script>
+  </body>
+</html>
